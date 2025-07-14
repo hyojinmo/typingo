@@ -1,0 +1,55 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    "%lld/%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
+    "Language to learn" : {
+
+    },
+    "Languages" : {
+
+    },
+    "Learn by typing" : {
+
+    },
+    "Levels" : {
+
+    },
+    "Native language" : {
+
+    },
+    "Next" : {
+
+    },
+    "Prepare script..." : {
+
+    },
+    "Restart" : {
+
+    },
+    "Restart the ongoing learning process." : {
+
+    },
+    "Start" : {
+
+    },
+    "Topics" : {
+
+    },
+    "Types" : {
+
+    }
+  },
+  "version" : "1.0"
+}
