@@ -7,6 +7,8 @@ struct OpenAIService: Sendable {
     case gpt4oMini = "gpt-4o-mini"
     case gpt4o = "gpt-4o"
     case gpt41nano = "gpt-4.1-nano"
+    case gpt41mini = "gpt-4.1-mini"
+    case gpt41 = "gpt-4.1"
   }
   
   private let apiKey: String = Bundle.main.infoDictionary!["OPEN_AI_SECRET"] as! String

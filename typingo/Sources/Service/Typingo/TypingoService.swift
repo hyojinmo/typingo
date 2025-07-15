@@ -5,7 +5,8 @@ struct TypingoService: Sendable {
     category: String,
     level: String,
     nativeLanguage: String,
-    targetLanguage: String
+    targetLanguage: String,
+    model: OpenAIService.GPTModel
   ) async throws -> Response {
     print(#function, category, level, nativeLanguage, targetLanguage)
     return try await OpenAIService().chat(
@@ -20,7 +21,7 @@ struct TypingoService: Sendable {
           )
         )
       ],
-      model: .gpt4oMini
+      model: model
     )
   }
 }

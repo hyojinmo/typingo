@@ -9,7 +9,8 @@ final class TypingoViewModel {
     category: String,
     level: String,
     nativeLanguage: String,
-    targetLanguage: String
+    targetLanguage: String,
+    model: OpenAIService.GPTModel
   ) async throws {
 //    data = .init(
 //      category: category,
@@ -41,8 +42,10 @@ final class TypingoViewModel {
       category: category,
       level: level,
       nativeLanguage: nativeLanguage,
-      targetLanguage: targetLanguage
+      targetLanguage: targetLanguage,
+      model: model
     )
+    print(#function, model)
     print(#function, data)
     self.data = data
   }

@@ -14,12 +14,12 @@ struct TranscriptionView: View {
   
   let text: String
   let appearance: Appearance
-  @Binding var isFocused: Bool
+  let offset: Int
+  @FocusState.Binding var focusStep: ContentView.Phase?
   let isExpired: Bool
   let onCompleted: () -> Void
   
   @State private var transcriptionText = ""
-  @FocusState private var focusState: Bool
   
   @State private var numberOfLines: Int = 0
   
@@ -55,12 +55,6 @@ struct TranscriptionView: View {
     transcriptionContentView()
       .sensoryFeedback(.success, trigger: isFinished)
       .sensoryFeedback(.warning, trigger: checkTranscriptionDifference())
-      .task(id: isFocused) {
-        if isFocused {
-          try? await Task.sleep(for: .seconds(0.3))
-        }
-        focusState = isFocused
-      }
   }
   
   @ViewBuilder
@@ -133,7 +127,7 @@ struct TranscriptionView: View {
     .autocorrectionDisabled()
     .textInputAutocapitalization(.never)
     .foregroundStyle(Color.clear)
-    .focused($focusState)
+    .focused($focusStep, equals: .step(offset + 1))
     .onChange(of: $transcriptionText.wrappedValue, initial: false) { oldValue, newValue in
       var text = newValue
       if text.last == "\n" {

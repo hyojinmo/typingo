@@ -70,6 +70,11 @@ struct ContentView: View {
   @State private var viewModel = TypingoViewModel()
   
   @State private var phase: Phase = .none
+  @FocusState private var focusStep: Phase?
+  
+  @AppStorage("OpenAIModel") private var model: OpenAIService.GPTModel = .gpt4oMini
+  
+  @State private var ttsService = TTSService()
   
   var body: some View {
     ScrollView {
@@ -219,6 +224,7 @@ struct ContentView: View {
             )
             
             nextTopicView(data: data)
+              .id(Phase.finished)
               .transition(
                 .asymmetric(
                   insertion: .init(
@@ -238,24 +244,32 @@ struct ContentView: View {
       }
       .padding()
     }
+    .scrollPosition(
+      id: .init(
+        get: { phase },
+        set: { _ in }
+      ),
+      anchor: .top
+    )
     .safeAreaInset(edge: .bottom) {
-      if case .step(let step) = phase,
-         let data = viewModel.data, data.script.indices.contains(step - 1)
-      {
-        let progress = Double(step - 1) / Double(data.script.count)
-        GeometryReader { geometry in
-          Rectangle()
-            .fill(.regularMaterial)
-            .overlay(alignment: .leading) {
-              Rectangle()
-                .fill(Color(.label))
-                .frame(width: max(1, geometry.size.width * progress))
-            }
+      if let data = viewModel.data {
+        if case .step(let step) = focusStep {
+          let progress = Double(step - 1) / Double(data.script.count)
+          GeometryReader { geometry in
+            Rectangle()
+              .fill(.regularMaterial)
+              .overlay(alignment: .leading) {
+                Rectangle()
+                  .fill(Color(.label))
+                  .frame(width: max(1, geometry.size.width * progress))
+              }
+          }
+          .frame(height: 4)
         }
-        .frame(height: 4)
       }
     }
     .animation(.snappy, value: phase)
+    .animation(.snappy, value: focusStep)
     .animation(.snappy, value: viewModel.data)
     .task {
       try? await Task.sleep(for: .seconds(1))
@@ -268,13 +282,47 @@ struct ContentView: View {
         print(error)
       }
     }
-    .sensoryFeedback(.increase, trigger: phase)
+    .task(id: phase) {
+      if case .step(let step) = phase,
+         step > 1
+      {
+        try? await Task.sleep(for: .seconds(1))
+      }
+      focusStep = phase
+    }
+    .sensoryFeedback(.selection, trigger: phase)
   }
 }
 
 extension ContentView {
   @ViewBuilder
   private func menuView() -> some View {
+    #if DEBUG
+    Section("Models") {
+      Menu {
+        Picker(
+          selection: $model) {
+            ForEach([
+              OpenAIService.GPTModel.gpt4o,
+              .gpt4oMini,
+              .gpt41,
+              .gpt41mini
+            ], id: \.self) { model in
+              Button {
+                self.model = model
+              } label: {
+                Text(model.rawValue)
+              }
+            }
+          } label: {
+            Text(verbatim: "GPT Models")
+          }
+      } label: {
+        Text(model.rawValue)
+      }
+    }
+    #endif
+    
     Section("Languages") {
       nativeLanguagePicker()
       
@@ -495,7 +543,7 @@ extension ContentView {
   
   @ViewBuilder
   private func progressView() -> some View {
-    HStack {
+    HStack(spacing: 14) {
       ProgressView()
         .progressViewStyle(.circular)
         .controlSize(.mini)
@@ -566,13 +614,15 @@ extension ContentView {
     let items = data.script.prefix(step)
     let lastIndex = items.count - 1
     
-    LazyVStack(alignment: .leading, spacing: 40) {
+    VStack(alignment: .leading, spacing: 40) {
       ForEach(
         Array(
           items.enumerated()
         ),
         id: \.element
-      ) { offset, script in
+      ) {
+        offset,
+        script in
         VStack(alignment: .leading, spacing: 20) {
           Text(script.speaker)
             .font(.footnote)
@@ -593,7 +643,14 @@ extension ContentView {
           
           HStack(alignment: .top) {
             Button {
-              
+              do {
+                try ttsService.speak(
+                  text: script.target,
+                  languageCode: data.targetLanguage
+                )
+              } catch {
+                print(error)
+              }
             } label: {
               Image(systemName: "play.circle")
                 .foregroundStyle(Color.secondary)
@@ -612,10 +669,8 @@ extension ContentView {
                 accentColor: Color(.label),
                 highlightedColor: Color(.systemYellow)
               ),
-              isFocused: .init(
-                get: { self.phase == .step(offset + 1) },
-                set: { _ in }
-              ),
+              offset: offset,
+              focusStep: $focusStep,
               isExpired: expired
             ) {
               if offset == finishedIndex {
@@ -709,7 +764,8 @@ extension ContentView {
           category: category,
           level: level.rawValue,
           nativeLanguage: nativeLanguage,
-          targetLanguage: targetLanguage
+          targetLanguage: targetLanguage,
+          model: model
         )
         if let data = viewModel.data {
           typingoData = try PropertyListEncoder().encode(data)
