@@ -179,7 +179,7 @@ struct ContentView: View {
               )
             
             DividerLabel(
-              text: "🔥"
+              text: data.motivation.speaker
             )
             .transition(
               .asymmetric(
@@ -192,11 +192,37 @@ struct ContentView: View {
               )
             )
             
-            nextTopicView(data: data)
+            motivationView(data: data)
               .transition(
                 .asymmetric(
                   insertion: .init(
                     .blurReplace.animation(.snappy.delay(4))
+                  ),
+                  removal: .init(
+                    .blurReplace
+                  )
+                )
+              )
+            
+            DividerLabel(
+              text: "🔥"
+            )
+            .transition(
+              .asymmetric(
+                insertion: .init(
+                  .blurReplace.animation(.snappy.delay(6))
+                ),
+                removal: .init(
+                  .blurReplace
+                )
+              )
+            )
+            
+            nextTopicView(data: data)
+              .transition(
+                .asymmetric(
+                  insertion: .init(
+                    .blurReplace.animation(.snappy.delay(7))
                   ),
                   removal: .init(
                     .blurReplace
@@ -474,9 +500,10 @@ extension ContentView {
         .progressViewStyle(.circular)
         .controlSize(.mini)
       
-      Text("Prepare script...")
+      Text(category)
+        .multilineTextAlignment(.center)
     }
-    .font(.largeTitle)
+    .font(.title3)
     .fontWeight(.black)
     .italic()
     .padding(.horizontal, 20)
@@ -648,6 +675,19 @@ extension ContentView {
           .fill(.regularMaterial)
           .stroke(.thickMaterial)
       }
+    }
+  }
+  
+  @ViewBuilder
+  private func motivationView(data: TypingoService.Response) -> some View {
+    VStack(alignment: .leading, spacing: 10) {
+      Text(data.motivation.native)
+        .font(.caption)
+        .foregroundStyle(.secondary)
+      
+      Text(data.motivation.target)
+        .font(.title2)
+        .fontWeight(.medium)
     }
   }
 }
