@@ -59,7 +59,6 @@ In that case:
 - Make the emoji conversation still express a realistic situation (e.g., ordering food, greeting a friend).
 
 After generating the conversation script, suggest 3 to 5 next conversation topics that would naturally follow or expand from the current situation.
-
 Format:
 "next_topics": [string]
 
@@ -67,6 +66,22 @@ Each topic should:
 - Be relevant to the current situation or learner’s progress.
 - Be phrased as short, intuitive titles.
 - Use the user's native language (based on the "native_language" input).
+
+After generating the next topics, add one short motivational quote or encouragement message.
+Format:
+"motivation": {
+  "speaker": "🧑‍🏫",         // emoji that fits the message emotionally
+  "target": "string",        // motivational message in the target language
+  "native": "string"         // translated message in the native language
+}
+
+When generating the "motivation" object, include a "speaker" emoji that emotionally fits the message.
+Instructions for choosing the speaker:
+- 🧑‍🏫 for wise advice, teacher-like encouragement
+- 🐣 or 🐻 for warm, gentle, comforting messages
+- 🤖 for messages about progress, consistency, or learning
+- 👏 or 🧍 for neutral praise or simple cheering
+You must select the emoji based on the content and emotional tone of the message. Do not use random or fixed emojis.
 """
     }
   }

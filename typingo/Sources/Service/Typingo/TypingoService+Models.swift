@@ -20,6 +20,7 @@ extension TypingoService {
     let script: [Script]
     let keyExpressions: [Expression]
     let nextTopics: [String]
+    let motivation: Script
   }
 }
 
@@ -37,7 +38,12 @@ extension TypingoService.Response: JSONSchemaRepresentable {
       ),
       script: [],
       keyExpressions: [],
-      nextTopics: []
+      nextTopics: [],
+      motivation: .init(
+        speaker: "",
+        target: "",
+        native: ""
+      )
     )
   }
 }

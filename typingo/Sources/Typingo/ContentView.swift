@@ -81,7 +81,9 @@ struct ContentView: View {
         
         VStack {
           Menu {
+            #if DEBUG
             menuView()
+            #endif
           } label: {
             Text(verbatim: "🐡")
               .imageScale(.large)
@@ -179,12 +181,22 @@ struct ContentView: View {
             DividerLabel(
               text: "🔥"
             )
+            .transition(
+              .asymmetric(
+                insertion: .init(
+                  .blurReplace.animation(.snappy.delay(3))
+                ),
+                removal: .init(
+                  .blurReplace
+                )
+              )
+            )
             
             nextTopicView(data: data)
               .transition(
                 .asymmetric(
                   insertion: .init(
-                    .blurReplace.animation(.snappy.delay(2))
+                    .blurReplace.animation(.snappy.delay(4))
                   ),
                   removal: .init(
                     .blurReplace
@@ -200,26 +212,21 @@ struct ContentView: View {
       }
       .padding()
     }
-    .toolbar {
-      ToolbarItemGroup(placement: .keyboard) {
-        if case .step(let step) = phase,
-           let data = viewModel.data, data.script.indices.contains(step - 1)
-        {
-          let progress = Double(step - 1) / Double(data.script.count)
-          GeometryReader { geometry in
-            Rectangle()
-              .fill(Color(.separator))
-              .overlay(alignment: .leading) {
-                Rectangle()
-                  .fill(Color(.label))
-                  .frame(width: max(1, geometry.size.width * progress))
-              }
-              .mask {
-                Capsule()
-              }
-          }
-          .frame(height: 4)
+    .safeAreaInset(edge: .bottom) {
+      if case .step(let step) = phase,
+         let data = viewModel.data, data.script.indices.contains(step - 1)
+      {
+        let progress = Double(step - 1) / Double(data.script.count)
+        GeometryReader { geometry in
+          Rectangle()
+            .fill(.regularMaterial)
+            .overlay(alignment: .leading) {
+              Rectangle()
+                .fill(Color(.label))
+                .frame(width: max(1, geometry.size.width * progress))
+            }
         }
+        .frame(height: 4)
       }
     }
     .animation(.snappy, value: phase)
@@ -373,7 +380,7 @@ extension ContentView {
           [
             PhaseAnimationStep(
               value: 0.0,
-              delay: 0.3
+              delay: 0.1
             ),
             PhaseAnimationStep(
               value: 1.0,
@@ -489,6 +496,7 @@ extension ContentView {
     Text(data.title)
       .font(.title2)
       .fontWeight(.bold)
+      .multilineTextAlignment(.center)
       .transition(
         .asymmetric(
           insertion: .init(
@@ -504,10 +512,11 @@ extension ContentView {
       Text(data.subtitle.native)
         .font(.caption)
         .foregroundStyle(.secondary)
+        .multilineTextAlignment(.center)
       
       Text(data.subtitle.target)
         .font(.body)
-      
+        .multilineTextAlignment(.center)
     }
     .transition(
       .asymmetric(
