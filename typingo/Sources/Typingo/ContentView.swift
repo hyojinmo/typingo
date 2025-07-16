@@ -76,6 +76,8 @@ struct ContentView: View {
   
   @State private var ttsService = TTSService()
   
+  @State private var isPresentedNewTopicView = false
+  
   var body: some View {
     ScrollView {
       VStack(spacing: 40) {
@@ -130,10 +132,34 @@ struct ContentView: View {
                   .delay(phase.delay)
               }
           }
-          .menuActionDismissBehavior(.disabled)
           
           if phase >= .ready {
             logoView()
+          }
+        }
+        .frame(maxWidth: .infinity)
+        .overlay(alignment: .top) {
+          if phase >= .started {
+            HStack {
+              Menu {
+                Button(role: .destructive) {
+                  finishTypingo()
+                } label: {
+                  Image(systemName: "xmark.octagon.fill")
+                  
+                  Text("Start over")
+                  
+                  Text("The current lesson will be canceled.")
+                }
+              } label: {
+                Image(systemName: "xmark.circle.fill")
+                  .imageScale(.large)
+                  .foregroundStyle(Color(.label))
+              }
+              
+              Spacer()
+            }
+            .padding(.horizontal, 10)
           }
         }
         
@@ -251,6 +277,31 @@ struct ContentView: View {
       ),
       anchor: .top
     )
+    .overlay(alignment: .bottom) {
+      if isPresentedNewTopicView {
+        TextInputView(
+          textIO: .init(
+            get: {
+              .init(
+                title: "New topic",
+                text: "") { string in
+                  guard !string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+                  
+                  category = string
+                  restartTypingo()
+                }
+            },
+            set: {
+              if $0 == nil {
+                isPresentedNewTopicView = false
+                focusStep = phase
+              }
+            }
+          )
+        )
+        .transition(.blurReplace)
+      }
+    }
     .safeAreaInset(edge: .bottom) {
       if let data = viewModel.data {
         if case .step(let step) = focusStep {
@@ -321,6 +372,7 @@ extension ContentView {
         Text(model.rawValue)
       }
     }
+    .menuActionDismissBehavior(.disabled)
     #endif
     
     Section("Languages") {
@@ -328,13 +380,26 @@ extension ContentView {
       
       targetLanguagePicker()
     }
+    .menuActionDismissBehavior(.disabled)
     
     Section("Topics") {
       topicPicker()
+        .menuActionDismissBehavior(.disabled)
+      
+      Button {
+        isPresentedNewTopicView = true
+      } label: {
+        Image(systemName: "keyboard")
+        
+        Text("New topic")
+        
+        Text("Create your own conversation topics")
+      }
     }
     
     ControlGroup("Levels") {
       levelPicker()
+        .menuActionDismissBehavior(.disabled)
     }
     
     ControlGroup {
@@ -388,7 +453,14 @@ extension ContentView {
       Picker(
         selection: $targetLanguage,
         content: {
-          ForEach(Languages().targetLanguages(), id: \.languageCode) { language in
+          ForEach(
+            Languages().targetLanguages().filter(
+              {
+                $0.languageCode != nativeLanguage
+              }
+            ),
+            id: \.languageCode
+          ) { language in
             Text(language.title)
           }
         },
@@ -408,14 +480,94 @@ extension ContentView {
   @ViewBuilder
   private func topicPicker() -> some View {
     Menu {
-      Picker(
-        selection: $category) {
-          ForEach(Topics().presets(), id: \.self) { topic in
-            Text(topic)
+      ForEach(Topics.Category.allCases, id: \.self) { category in
+        switch category {
+        case .dailyLife:
+          Menu {
+            Picker(
+              selection: $category
+            ) {
+              ForEach(Topics.DailyLife.allCases, id: \.title) { topic in
+                Text(topic.title)
+              }
+            } label: {
+              Text(Topics.Category.dailyLife.title)
+            }
+          } label: {
+            Text(Topics.Category.dailyLife.title)
           }
-        } label: {
-          Text("Topics")
+        case .travel:
+          Menu {
+            Picker(
+              selection: $category
+            ) {
+              ForEach(Topics.Travel.allCases, id: \.title) { topic in
+                Text(topic.title)
+              }
+            } label: {
+              Text(Topics.Category.travel.title)
+            }
+          } label: {
+            Text(Topics.Category.travel.title)
+          }
+        case .schoolAndWork:
+          Menu {
+            Picker(
+              selection: $category
+            ) {
+              ForEach(Topics.SchoolAndWork.allCases, id: \.title) { topic in
+                Text(topic.title)
+              }
+            } label: {
+              Text(Topics.Category.schoolAndWork.title)
+            }
+          } label: {
+            Text(Topics.Category.schoolAndWork.title)
+          }
+        case .aboutMeAndPeople:
+          Menu {
+            Picker(
+              selection: $category
+            ) {
+              ForEach(Topics.AboutMeAndPeople.allCases, id: \.title) { topic in
+                Text(topic.title)
+              }
+            } label: {
+              Text(Topics.Category.aboutMeAndPeople.title)
+            }
+          } label: {
+            Text(Topics.Category.aboutMeAndPeople.title)
+          }
+        case .feelingsAndReactions:
+          Menu {
+            Picker(
+              selection: $category
+            ) {
+              ForEach(Topics.FeelingsAndReactions.allCases, id: \.title) { topic in
+                Text(topic.title)
+              }
+            } label: {
+              Text(Topics.Category.feelingsAndReactions.title)
+            }
+          } label: {
+            Text(Topics.Category.feelingsAndReactions.title)
+          }
+        case .funAndInterests:
+          Menu {
+            Picker(
+              selection: $category
+            ) {
+              ForEach(Topics.FunAndInterests.allCases, id: \.title) { topic in
+                Text(topic.title)
+              }
+            } label: {
+              Text(Topics.Category.funAndInterests.title)
+            }
+          } label: {
+            Text(Topics.Category.funAndInterests.title)
+          }
         }
+      }
     } label: {
       Text(category)
     }
@@ -538,7 +690,6 @@ extension ContentView {
         )
       )
     )
-    .menuActionDismissBehavior(.disabled)
   }
   
   @ViewBuilder
@@ -707,13 +858,40 @@ extension ContentView {
   @ViewBuilder
   private func nextTopicView(data: TypingoService.Response) -> some View {
     Menu {
-      ForEach(data.nextTopics, id: \.self) { topic in
-        Button {
-          category = topic
-          restartTypingo()
-        } label: {
-          Text(topic)
+      Section("Next topics") {
+        ForEach(data.nextTopics, id: \.self) { topic in
+          Button {
+            category = topic
+            restartTypingo()
+          } label: {
+            Text(topic)
+          }
         }
+      }
+      
+      Section("New topic") {
+        Button {
+          isPresentedNewTopicView = true
+        } label: {
+          Image(systemName: "keyboard")
+          
+          Text("New topic")
+          
+          Text("Create your own conversation topics")
+        }
+      }
+      
+      Divider()
+      
+      Button {
+        finishTypingo()
+      } label: {
+        Image(systemName: "checkmark.circle.fill")
+          .foregroundStyle(Color(.green), Color(.label))
+        
+        Text("Finish")
+        
+        Text("The class is now over.")
       }
     } label: {
       HStack {
@@ -735,19 +913,26 @@ extension ContentView {
   
   @ViewBuilder
   private func motivationView(data: TypingoService.Response) -> some View {
-    VStack(alignment: .leading, spacing: 10) {
+    VStack(spacing: 10) {
       Text(data.motivation.native)
         .font(.caption)
         .foregroundStyle(.secondary)
+        .multilineTextAlignment(.center)
       
       Text(data.motivation.target)
         .font(.title2)
         .fontWeight(.medium)
+        .multilineTextAlignment(.center)
     }
   }
 }
 
 extension ContentView {
+  private func finishTypingo() {
+    phase = .ready
+    typingoData = nil
+  }
+  
   private func restartTypingo() {
     phase = .ready
     startTypingo()
