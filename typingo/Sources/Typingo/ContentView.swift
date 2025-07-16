@@ -77,6 +77,7 @@ struct ContentView: View {
   @State private var ttsService = TTSService()
   
   @State private var isPresentedNewTopicView = false
+  @State private var isPresentedKeyboardTutorialView = false
   
   var body: some View {
     ScrollView {
@@ -165,6 +166,14 @@ struct ContentView: View {
         
         if phase >= .ready {
           streakView()
+          
+          if phase == .ready {
+            Text("No mic, no problem. Just type to learn.")
+              .font(.footnote)
+              .italic()
+              .multilineTextAlignment(.center)
+              .transition(.blurReplace.combined(with: .scale).animation(.snappy.delay(1.5)))
+          }
         }
         
         if let data = viewModel.data,
@@ -305,7 +314,7 @@ struct ContentView: View {
     .safeAreaInset(edge: .bottom) {
       if let data = viewModel.data {
         if case .step(let step) = focusStep {
-          let progress = Double(step - 1) / Double(data.script.count)
+          let progress = Double(step) / Double(data.script.count)
           GeometryReader { geometry in
             Rectangle()
               .fill(.regularMaterial)
@@ -342,6 +351,9 @@ struct ContentView: View {
       focusStep = phase
     }
     .sensoryFeedback(.selection, trigger: phase)
+    .sheet(isPresented: $isPresentedKeyboardTutorialView) {
+      KeyboardTutorialView()
+    }
   }
 }
 
@@ -376,11 +388,11 @@ extension ContentView {
     #endif
     
     Section("Languages") {
-      nativeLanguagePicker()
-      
       targetLanguagePicker()
+      
+      nativeLanguagePicker()
+        .menuActionDismissBehavior(.disabled)
     }
-    .menuActionDismissBehavior(.disabled)
     
     Section("Topics") {
       topicPicker()
@@ -393,7 +405,7 @@ extension ContentView {
         
         Text("New topic")
         
-        Text("Create your own conversation topics")
+        Text("Type any situation to start learning")
       }
     }
     
@@ -468,6 +480,20 @@ extension ContentView {
           Text("Language to learn")
         }
       )
+      .menuActionDismissBehavior(.disabled)
+      
+      Divider()
+      
+      Button {
+        isPresentedKeyboardTutorialView = true
+      } label: {
+        Image(systemName: "plus.circle")
+        
+        Text("Add language")
+        
+        Text("Would you like to learn another language?")
+      }
+
     } label: {
       if let language = Languages().targetLanguages().first(where: { $0.languageCode == targetLanguage }) {
         Text(language.title)
@@ -653,7 +679,7 @@ extension ContentView {
         Spacer()
       }
       
-      Text("Types")
+      Text("Typing")
         .font(.caption2)
         .italic()
     }
@@ -877,7 +903,7 @@ extension ContentView {
           
           Text("New topic")
           
-          Text("Create your own conversation topics")
+          Text("Type any situation to start learning")
         }
       }
       

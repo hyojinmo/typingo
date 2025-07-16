@@ -2,6 +2,22 @@
   "sourceLanguage" : "en",
   "strings" : {
     "" : {
+      "shouldTranslate" : false
+    },
+    "%@ %@ General > %@ Keyboard" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ General > %3$@ Keyboard"
+          }
+        }
+      }
+    },
+    "%@ Keyboards > Add New Keyboard" : {
+
+    },
+    "%@ Open the Settings app on your iPhone or iPad." : {
 
     },
     "%lld/%lld" : {
@@ -12,9 +28,13 @@
             "value" : "%1$lld/%2$lld"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
-    "Create your own conversation topics" : {
+    "Add keyboard" : {
+
+    },
+    "Add language" : {
 
     },
     "Finish" : {
@@ -47,10 +67,16 @@
     "Next topics" : {
 
     },
+    "No mic, no problem. Just type to learn." : {
+
+    },
     "Restart" : {
 
     },
     "Restart the ongoing learning process." : {
+
+    },
+    "Skip for Now" : {
 
     },
     "Start" : {
@@ -65,10 +91,19 @@
     "The current lesson will be canceled." : {
 
     },
+    "To learn a new language, you need to add a keyboard in System Settings." : {
+
+    },
     "Topics" : {
 
     },
-    "Types" : {
+    "Type any situation to start learning" : {
+
+    },
+    "Typing" : {
+
+    },
+    "Would you like to learn another language?" : {
 
     }
   },
