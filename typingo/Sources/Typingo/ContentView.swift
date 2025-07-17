@@ -344,9 +344,21 @@ struct ContentView: View {
     }
     .task(id: phase) {
       if case .step(let step) = phase,
-         step > 1
+         step > 0,
+         let data = viewModel.data,
+         data.script.indices.contains(step - 1)
       {
         try? await Task.sleep(for: .seconds(1))
+        
+        do {
+          let script = data.script[step - 1]
+          try await ttsService.speak(
+            text: script.target,
+            languageCode: data.targetLanguage
+          )
+        } catch {
+          print(error)
+        }
       }
       focusStep = phase
     }
@@ -820,13 +832,15 @@ extension ContentView {
           
           HStack(alignment: .top) {
             Button {
-              do {
-                try ttsService.speak(
-                  text: script.target,
-                  languageCode: data.targetLanguage
-                )
-              } catch {
-                print(error)
+              Task {
+                do {
+                  try await ttsService.speak(
+                    text: script.target,
+                    languageCode: data.targetLanguage
+                  )
+                } catch {
+                  print(error)
+                }
               }
             } label: {
               Image(systemName: "play.circle")

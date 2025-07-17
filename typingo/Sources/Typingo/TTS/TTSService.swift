@@ -6,6 +6,8 @@ import Speech
 final class TTSService: NSObject {
   private let synthesizer = AVSpeechSynthesizer()
   
+  private var onFinished: (() -> Void)?
+  
   override init() {
     super.init()
     
@@ -13,8 +15,8 @@ final class TTSService: NSObject {
   }
 }
 
-extension TTSService: AVSpeechSynthesizerDelegate {
-  func speak(text: String, withVoice voiceIdentifier: String? = nil, languageCode: String?) throws {
+extension TTSService {
+  func speak(text: String, withVoice voiceIdentifier: String? = nil, languageCode: String?) async throws {
     let audioSession = AVAudioSession.sharedInstance()
     
     try audioSession.setCategory(
@@ -42,6 +44,12 @@ extension TTSService: AVSpeechSynthesizerDelegate {
     }
     
     synthesizer.speak(utterance)
+    
+    await withCheckedContinuation { [weak self] continuation in
+      self?.onFinished = {
+        continuation.resume()
+      }
+    }
   }
   
   func stopSpeaking() throws {
@@ -54,5 +62,25 @@ extension TTSService: AVSpeechSynthesizerDelegate {
   private func restoreAudioSession() throws {
     let audioSession = AVAudioSession.sharedInstance()
     try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
+  }
+}
+
+extension TTSService: AVSpeechSynthesizerDelegate {
+  nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+    
+  }
+  
+  nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+    Task { @MainActor in
+      onFinished?()
+      onFinished = nil
+    }
+  }
+  
+  nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+    Task { @MainActor in
+      onFinished?()
+      onFinished = nil
+    }
   }
 }
