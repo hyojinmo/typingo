@@ -69,6 +69,8 @@ struct ContentView: View {
   
   @State private var viewModel = TypingoViewModel()
   
+  @State private var numberOfLessons = 0
+  
   @State private var phase: Phase = .none
   @FocusState private var focusStep: Phase?
   
@@ -172,7 +174,16 @@ struct ContentView: View {
               .font(.footnote)
               .italic()
               .multilineTextAlignment(.center)
-              .transition(.blurReplace.combined(with: .scale).animation(.snappy.delay(1.5)))
+              .transition(
+                .asymmetric(
+                  insertion: .init(
+                    .blurReplace.animation(.snappy.delay(1.5))
+                  ),
+                  removal: .init(
+                    .blurReplace
+                  )
+                )
+              )
           }
         }
         
@@ -359,8 +370,34 @@ struct ContentView: View {
         } catch {
           print(error)
         }
+      } else if phase == .finished {
+        if let data = viewModel.data {
+          do {
+            let dataSource = UserLessonLocalDataSource()
+            try await dataSource.insertUserLesson(
+              typingoData: data,
+              llmModel: model.rawValue
+            )
+          } catch {
+            print(error)
+          }
+        }
+        typingoData = nil
       }
       focusStep = phase
+    }
+    .task {
+      do {
+        let dataSource = UserLessonLocalDataSource()
+        numberOfLessons = try await dataSource.countForUserLessons()
+        
+        for await _ in dataSource.observeChanges() {
+          guard !Task.isCancelled else { return }
+          numberOfLessons = try await dataSource.countForUserLessons()
+        }
+      } catch {
+        print(error)
+      }
     }
     .sensoryFeedback(.selection, trigger: phase)
     .sheet(isPresented: $isPresentedKeyboardTutorialView) {
@@ -679,11 +716,12 @@ extension ContentView {
         Image(systemName: "laurel.leading")
           .font(.largeTitle)
         
-        Text(verbatim: "1")
+        Text(verbatim: "\(numberOfLessons)")
           .font(.largeTitle)
           .fontWeight(.black)
           .italic()
-          .contentTransition(.numericText(value: 1))
+          .contentTransition(.numericText(value: Double(numberOfLessons)))
+          .animation(.snappy, value: numberOfLessons)
         
         Image(systemName: "laurel.trailing")
           .font(.largeTitle)
@@ -993,7 +1031,7 @@ extension ContentView {
           model: model
         )
         if let data = viewModel.data {
-          typingoData = try PropertyListEncoder().encode(data)
+          typingoData = try data.encoded()
         }
       } catch {
         print(error)
@@ -1011,7 +1049,7 @@ extension ContentView {
     if let typingoData {
       try? await Task.sleep(for: .seconds(2))
       
-      let data = try PropertyListDecoder().decode(TypingoService.Response.self, from: typingoData)
+      let data = try TypingoService.Response(from: typingoData)
       viewModel.data = data
       
       phase = .started

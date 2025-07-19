@@ -1,0 +1,1 @@
+extension UserLessonEntity: @unchecked Sendable {}

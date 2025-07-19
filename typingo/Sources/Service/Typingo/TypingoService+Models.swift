@@ -1,3 +1,5 @@
+import Foundation
+
 extension TypingoService {
   struct Response: Sendable, Codable, Hashable {
     struct Expression: Sendable, Codable, Hashable {
@@ -21,6 +23,16 @@ extension TypingoService {
     let keyExpressions: [Expression]
     let nextTopics: [String]
     let motivation: Script
+  }
+}
+
+extension TypingoService.Response {
+  func encoded() throws -> Data {
+    return try PropertyListEncoder().encode(self)
+  }
+  
+  init(from data: Data) throws {
+    self = try PropertyListDecoder().decode(TypingoService.Response.self, from: data)
   }
 }
 
