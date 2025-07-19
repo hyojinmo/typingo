@@ -668,11 +668,12 @@ extension ContentView {
   
   @ViewBuilder
   private func logoView() -> some View {
-    HStack(spacing: 4) {
-      Text(verbatim: "Typingo")
+    HStack(spacing: 2) {
+      Text(verbatim: "Typin")
         .font(.largeTitle)
-        .fontWeight(.black)
-        .fontDesign(.monospaced)
+        .fontWeight(.medium)
+        .fontDesign(.serif)
+        .foregroundStyle(Color.primary)
       
       Rectangle()
         .frame(width: 2)
@@ -697,6 +698,12 @@ extension ContentView {
             .default
             .delay(phase.delay)
         }
+      
+      Text(verbatim: "go")
+        .font(.largeTitle)
+        .fontWeight(.medium)
+        .fontDesign(.serif)
+        .foregroundStyle(Color.secondary)
     }
     .fixedSize(horizontal: false, vertical: true)
     .transition(.blurReplace.combined(with: .scale).animation(.snappy.delay(0.2)))
