@@ -26,6 +26,8 @@ struct typingoApp: App {
       }
       .task {
         viewContext = await AppConfiguration.shared.coreDataManager.viewContext
+        
+        AppConfiguration.shared.initializeAnalytics()
       }
     }
   }

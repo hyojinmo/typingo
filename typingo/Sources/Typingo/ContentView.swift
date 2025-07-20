@@ -81,6 +81,8 @@ struct ContentView: View {
   @State private var isPresentedNewTopicView = false
   @State private var isPresentedKeyboardTutorialView = false
   
+  @State private var availableDate: Date?
+  
   var body: some View {
     ScrollView {
       VStack(spacing: 40) {
@@ -283,7 +285,11 @@ struct ContentView: View {
               )
           }
         } else if phase == .ready {
-          startButton()
+          if let availableDate {
+            availableButton(at: availableDate)
+          } else {
+            startButton()
+          }
         } else if phase == .loading {
           progressView()
         }
@@ -348,6 +354,7 @@ struct ContentView: View {
       phase = .ready
       
       do {
+        try await checkAvailableDate()
         try await restoreTypingoData()
       } catch {
         print(error)
@@ -399,6 +406,9 @@ struct ContentView: View {
         print(error)
       }
     }
+    .onChange(of: NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) {
+      
+    }
     .sensoryFeedback(.selection, trigger: phase)
     .sheet(isPresented: $isPresentedKeyboardTutorialView) {
       KeyboardTutorialView()
@@ -437,10 +447,10 @@ extension ContentView {
     #endif
     
     Section("Languages") {
-      targetLanguagePicker()
-      
       nativeLanguagePicker()
         .menuActionDismissBehavior(.disabled)
+      
+      targetLanguagePicker()
     }
     
     Section("Topics") {
@@ -458,9 +468,13 @@ extension ContentView {
       }
     }
     
-    ControlGroup("Levels") {
-      levelPicker()
-        .menuActionDismissBehavior(.disabled)
+    Section("Levels") {
+      Menu {
+        levelPicker()
+      } label: {
+        Text(level.rawValue)
+      }
+      .menuActionDismissBehavior(.disabled)
     }
     
     ControlGroup {
@@ -776,6 +790,43 @@ extension ContentView {
   }
   
   @ViewBuilder
+  private func availableButton(at date: Date) -> some View {
+    Menu {
+      Text("Sorry, we only offer two lessons per day.")
+    } label: {
+      VStack {
+        Text("Available in")
+          .font(.footnote)
+          .fontWeight(.medium)
+        
+        Text(date, style: .timer)
+          .font(.largeTitle)
+          .fontWeight(.black)
+          .monospacedDigit()
+          .italic()
+      }
+      .foregroundStyle(Color(.label))
+      .padding(.horizontal, 20)
+      .padding(.vertical, 10)
+      .background {
+        Capsule()
+          .fill(.regularMaterial)
+          .stroke(.thickMaterial)
+      }
+    }
+    .transition(
+      .asymmetric(
+        insertion: .init(
+          .blurReplace.combined(with: .scale).animation(.snappy.delay(2))
+        ),
+        removal: .init(
+          .blurReplace.combined(with: .scale)
+        )
+      )
+    )
+  }
+  
+  @ViewBuilder
   private func progressView() -> some View {
     HStack(spacing: 14) {
       ProgressView()
@@ -1030,25 +1081,35 @@ extension ContentView {
     
     Task { [viewModel] in
       do {
-        try await viewModel.reloadScript(
-          category: category,
-          level: level.rawValue,
-          nativeLanguage: nativeLanguage,
-          targetLanguage: targetLanguage,
-          model: model
-        )
-        if let data = viewModel.data {
-          typingoData = try data.encoded()
+        try await checkAvailableDate()
+        
+        let isAvailableToday = availableDate == nil
+        
+        if isAvailableToday {
+          try await viewModel.reloadScript(
+            category: category,
+            level: level.rawValue,
+            nativeLanguage: nativeLanguage,
+            targetLanguage: targetLanguage,
+            model: model
+          )
+          if let data = viewModel.data {
+            typingoData = try data.encoded()
+          }
+          
+          phase = .started
+          
+          try? await Task.sleep(for: .seconds(2))
+          
+          phase = .step(1)
+        } else {
+          phase = .ready
         }
       } catch {
         print(error)
+        
+        phase = .ready
       }
-      
-      phase = .started
-      
-      try? await Task.sleep(for: .seconds(2))
-      
-      phase = .step(1)
     }
   }
   
@@ -1064,6 +1125,24 @@ extension ContentView {
       try? await Task.sleep(for: .seconds(2))
       
       phase = .step(1)
+    }
+  }
+}
+
+extension ContentView {
+  private func checkAvailableDate() async throws {
+    let dataSource = UserLessonLocalDataSource()
+    let numberOfLessonInToday = try await dataSource.countForUserLessons(
+      predicate: NSCompoundPredicate(andPredicateWithSubpredicates: [
+        \UserLessonEntity.createdDate >= Calendar.current.startOfDay(for: Date()),
+        \UserLessonEntity.createdDate < Calendar.current.startOfDay(for: Date()).addingTimeInterval(86400)
+      ])
+    )
+    // 하루에 2강의만 제공
+    if numberOfLessonInToday >= 2 {
+      availableDate = Calendar.current.startOfDay(for: Date()).addingTimeInterval(86400)
+    } else {
+      availableDate = nil
     }
   }
 }
