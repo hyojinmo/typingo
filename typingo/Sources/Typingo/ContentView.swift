@@ -407,7 +407,9 @@ struct ContentView: View {
       }
     }
     .onChange(of: NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) {
-      
+      Task {
+        try await checkAvailableDate()
+      }
     }
     .sensoryFeedback(.selection, trigger: phase)
     .sheet(isPresented: $isPresentedKeyboardTutorialView) {
