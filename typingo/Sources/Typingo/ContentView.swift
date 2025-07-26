@@ -370,10 +370,12 @@ struct ContentView: View {
         
         do {
           let script = data.script[step - 1]
-          try await ttsService.speak(
-            text: script.target,
-            languageCode: data.targetLanguage
-          )
+          if AudioDeviceInteractor().isVolumeOn() {
+            try await ttsService.speak(
+              text: script.target,
+              languageCode: data.targetLanguage
+            )
+          }
         } catch {
           print(error)
         }
@@ -946,7 +948,7 @@ extension ContentView {
                 .font(.title)
             }
 
-            TranscriptionView(
+            TranscriptionNormalModeView(
               text: script.target,
               appearance: .init(
                 font: .preferredFont(
@@ -956,7 +958,9 @@ extension ContentView {
                 placeholderColor: expired ? Color(.label) : Color.secondary,
                 backgroundColor: Color(.systemBackground),
                 accentColor: Color(.label),
-                highlightedColor: Color(.systemYellow)
+                highlightedColor: Color(.systemYellow),
+                allowedTypoColor: Color(.systemYellow),
+                allowedTypoBackgroundColor: Color(.systemBackground)
               ),
               offset: offset,
               focusStep: $focusStep,

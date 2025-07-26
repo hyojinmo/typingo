@@ -59,6 +59,7 @@
 			children = (
 				5126F0582E25475100D125C8 /* ci_scripts */,
 				51B6F21F2E21576D00FBEEB2 /* typingo */,
+				51D094C42E349CCB005FF12D /* Frameworks */,
 				51B6F21E2E21576D00FBEEB2 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -69,6 +70,13 @@
 				51B6F21D2E21576D00FBEEB2 /* typingo.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		51D094C42E349CCB005FF12D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -336,6 +344,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = "$(APP_VERSION)";
+				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = app.codeful.typingo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -373,6 +382,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = "$(APP_VERSION)";
+				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = app.codeful.typingo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
