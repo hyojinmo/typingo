@@ -951,9 +951,10 @@ extension ContentView {
             TranscriptionNormalModeView(
               text: script.target,
               appearance: .init(
-                font: .preferredFont(
-                  forTextStyle: .title1
-                ).bold(),
+                font: .monospacedSystemFont(
+                  ofSize: UIFont.preferredFont(forTextStyle: .title1).pointSize,
+                  weight: .bold
+                ),
                 foregroundColor: Color(.label),
                 placeholderColor: expired ? Color(.label) : Color.secondary,
                 backgroundColor: Color(.systemBackground),
@@ -1073,6 +1074,14 @@ extension ContentView {
   private func finishTypingo() {
     phase = .ready
     typingoData = nil
+    
+    Task {
+      do {
+        try await checkAvailableDate()
+      } catch {
+        print(error)
+      }
+    }
   }
   
   private func restartTypingo() {

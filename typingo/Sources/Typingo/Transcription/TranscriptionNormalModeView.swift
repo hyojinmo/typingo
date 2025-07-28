@@ -104,16 +104,11 @@ struct TranscriptionNormalModeView: View {
     
     let originalChars = Array(original)
     let modifiedChars = Array(modified)
-    let correctedChars = Array(correctedText)
     
     let minLength = min(originalChars.count, modifiedChars.count)
     
     for i in 0..<minLength {
-      if i == minLength - 1 {
-        let range = attributedString.index(at: i)..<attributedString.index(at: i + 1)
-        attributedString[range].foregroundColor = appearance.foregroundColor
-        attributedString[range].backgroundColor = appearance.backgroundColor
-      } else if originalChars[i] != modifiedChars[i] {
+      if originalChars[i] != modifiedChars[i] {
         let range = attributedString.index(at: i)..<attributedString.index(at: i + 1)
         
         // 허용된 오타인지 진짜 오타인지 구분
@@ -150,10 +145,10 @@ struct TranscriptionNormalModeView: View {
       } else if String(originalChar).lowercased() == String(typedChar).lowercased() {
         // 대소문자만 다른 경우 - 원본 대소문자로 보정
         correctedChars.append(originalChar)
-      } else if isSpecialCharacter(originalChar) && (isSpecialCharacter(typedChar) || typedChar == " ") {
+      } else if isSpecialCharacter(originalChar) && (isSpecialCharacter(typedChar) || typedChar.isWhitespace) {
         // 특수문자끼리 다른 경우 또는 특수문자 자리에 스페이스 - 원본 특수문자로 보정
         correctedChars.append(originalChar)
-      } else if originalChar == " " && isSpecialCharacter(typedChar) {
+      } else if originalChar.isWhitespace && isSpecialCharacter(typedChar) {
         // 스페이스 자리에 특수문자 - 원본 스페이스로 보정
         correctedChars.append(originalChar)
       } else {
@@ -187,7 +182,7 @@ struct TranscriptionNormalModeView: View {
   
   @ViewBuilder
   private func transcriptionCountView() -> some View {
-    Text("\(transcriptionText.normalizeWhitespace().count)/\(originalText.count)")
+    Text("\(transcriptionText.count)/\(originalText.count)")
       .font(.caption)
       .foregroundStyle(Color.secondary)
   }
@@ -201,13 +196,13 @@ struct TranscriptionNormalModeView: View {
   }
   
   private func checkTranscriptionNewLine(text: String) -> String {
-    let transcriptionLines = linesFrom(text: text.trimmingCharacters(in: .whitespacesAndNewlines), font: appearance.font, width: textSize.width)
+    let transcriptionLines = linesFrom(text: text, font: appearance.font, width: textSize.width)
     
     // 현재 입력한 텍스트가 원본의 어떤 라인과 일치하는지 확인 (허용 규칙 적용)
     if let lastTranscriptionLine = transcriptionLines.last {
       for (lineIndex, originalLine) in lines.enumerated() {
         if lineIndex < lines.count - 1 && linesMatch(originalLine, lastTranscriptionLine) {
-          return text.trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
+          return text + "\n"
         }
       }
     }
@@ -218,7 +213,7 @@ struct TranscriptionNormalModeView: View {
   // 두 라인이 허용 규칙에 따라 일치하는지 확인하는 함수
   private func linesMatch(_ originalLine: String, _ transcriptionLine: String) -> Bool {
     let originalChars = Array(originalLine.trimmingCharacters(in: .whitespacesAndNewlines))
-    let transcriptionChars = Array(transcriptionLine.trimmingCharacters(in: .whitespacesAndNewlines))
+    let transcriptionChars = Array(transcriptionLine.trimmingCharacters(in: .newlines))
     
     // 길이가 다르면 일치하지 않음
     guard originalChars.count == transcriptionChars.count else {
@@ -254,12 +249,12 @@ struct TranscriptionNormalModeView: View {
     
     // 특수문자끼리는 오타 허용 (둘 다 특수문자면 true)
     // 또는 특수문자 자리에 스페이스를 입력해도 허용
-    if isSpecialCharacter(original) && (isSpecialCharacter(typed) || typed == " ") {
+    if isSpecialCharacter(original) && (isSpecialCharacter(typed) || (typed.isWhitespace || typed.isNewline)) {
       return true
     }
     
     // 스페이스 자리에 특수문자를 입력해도 허용
-    if original == " " && isSpecialCharacter(typed) {
+    if original.isWhitespace && (isSpecialCharacter(typed) || (typed.isWhitespace || typed.isNewline)) {
       return true
     }
     
@@ -278,7 +273,7 @@ struct TranscriptionNormalModeView: View {
     guard transcriptionText.count > 1 else { return false }
     let cursor = transcriptionText.count - 1
     let originalChars = Array(rawText.prefix(cursor))
-    let currentChars = Array(transcriptionText.normalizeWhitespace().normalizeQuotes().prefix(cursor))
+    let currentChars = Array(transcriptionText.normalizeQuotes().prefix(cursor))
     
     if originalChars.count != currentChars.count {
       return true
@@ -308,7 +303,7 @@ struct TranscriptionNormalModeView: View {
     transcriptionCompletionTask = Task {
       guard !Task.isCancelled else { return }
       
-      let normalizedTranscription = transcriptionText.normalizeWhitespace()
+      let normalizedTranscription = transcriptionText//.normalizeWhitespace()
       let normalizedOriginal = rawText
       
       // 길이가 같아야 완료
@@ -382,14 +377,14 @@ struct TranscriptionNormalModeView: View {
     layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: layoutManager.numberOfGlyphs)) { _, usedRect, textContainer, glyphRange, _ in
       let range = Range(glyphRange, in: text)!
       let lineText = String(text[range])
-      lines.append(lineText.trimmingCharacters(in: .whitespacesAndNewlines))
+      lines.append(lineText.trimmingCharacters(in: .newlines))
       lastIndex = glyphRange.upperBound
     }
     
     // 남은 텍스트가 있다면 추가 (개행 처리)
     if lastIndex < text.count {
       let remainingText = String(text[text.index(text.startIndex, offsetBy: lastIndex)...])
-      lines.append(remainingText.trimmingCharacters(in: .whitespacesAndNewlines))
+      lines.append(remainingText.trimmingCharacters(in: .newlines))
     }
     
     return lines
