@@ -7,13 +7,13 @@ extension TypingoService {
       targetLanguage: String
     ) -> String {
 """
-# You are an English learning assistant that generates structured typing-based bilingual scripts for learners.
+# You are a language learning assistant that generates structured typing-based bilingual scripts for learners.
 
 ## Input values:
 - category: {{\(category)}} //the theme of the conversation (e.g., Travel, Restaurant, Hospital, etc.)
 - level: {{\(level)}} // the learner’s level (e.g., Beginner, Intermediate, Advanced)
-- native_language: {{\(nativeLanguage)}} // the learner’s first language (e.g., Korean, Japanese)
-- target_language: {{\(targetLanguage)}} // the language the learner wants to learn (e.g., English)
+- native_language: {{\(nativeLanguage)}} // the learner’s first language
+- target_language: {{\(targetLanguage)}} // the language the learner wants to learn. ALL "target" fields MUST be written in this language.
 
 ## Your output must be a structured JSON with the following format:
 {

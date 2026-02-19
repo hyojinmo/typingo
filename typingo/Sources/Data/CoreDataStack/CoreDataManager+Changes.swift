@@ -1,7 +1,7 @@
 @preconcurrency import CoreData
 
 extension CoreDataManager {
-  public struct CoreDataChange<T: Sendable>: Sendable {
+  public struct CoreDataChange<T>: @unchecked Sendable {
     let inserted: [T]
     let updated: [T]
     let deleted: [T]

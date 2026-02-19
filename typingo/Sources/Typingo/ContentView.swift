@@ -80,6 +80,10 @@ struct ContentView: View {
   
   @State private var isPresentedNewTopicView = false
   @State private var isPresentedKeyboardTutorialView = false
+
+  @MainActor private var needsVirtualKeyboard: Bool {
+    Languages.needsVirtualKeyboard(for: targetLanguage)
+  }
   
   @State private var availableDate: Date?
   
@@ -963,7 +967,8 @@ extension ContentView {
               ),
               offset: offset,
               focusStep: $focusStep,
-              isExpired: expired
+              isExpired: expired,
+              needsVirtualKeyboard: needsVirtualKeyboard
             ) {
               if offset == finishedIndex {
                 self.phase = .finished

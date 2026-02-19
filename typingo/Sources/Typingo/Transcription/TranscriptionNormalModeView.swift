@@ -19,6 +19,7 @@ struct TranscriptionNormalModeView: View {
   let offset: Int
   @FocusState.Binding var focusStep: ContentView.Phase?
   let isExpired: Bool
+  let needsVirtualKeyboard: Bool
   let onCompleted: () -> Void
   
   @State private var transcriptionText = ""
@@ -54,9 +55,18 @@ struct TranscriptionNormalModeView: View {
   private let keyboardFeedback = UIImpactFeedbackGenerator(style: .light)
   
   var body: some View {
-    transcriptionContentView()
-      .sensoryFeedback(.success, trigger: isFinished)
-      .sensoryFeedback(.warning, trigger: checkTranscriptionDifference())
+    VStack(spacing: 12) {
+      transcriptionContentView()
+        .sensoryFeedback(.success, trigger: isFinished)
+        .sensoryFeedback(.warning, trigger: checkTranscriptionDifference())
+
+      if needsVirtualKeyboard && !isExpired {
+        SyllableKeyboardView(
+          text: originalText,
+          transcriptionText: $transcriptionText
+        )
+      }
+    }
   }
   
   @ViewBuilder
@@ -95,7 +105,7 @@ struct TranscriptionNormalModeView: View {
   
   private var previewText: AttributedString {
     guard transcriptionText.count > 0 else { return AttributedString(transcriptionText) }
-    let original = rawText
+    let original = referenceText
     let modified = transcriptionText
     
     // 대소문자와 특수문자를 원본에 맞게 보정한 텍스트 생성
@@ -162,21 +172,33 @@ struct TranscriptionNormalModeView: View {
   
   @ViewBuilder
   private func transcriptionTextView() -> some View {
-    TextField(
-      "",
-      text: $transcriptionText,
-      axis: .vertical
-    )
-    .autocorrectionDisabled()
-    .textInputAutocapitalization(.never)
-    .foregroundStyle(Color.clear)
-    .focused($focusStep, equals: .step(offset + 1))
-    .onChange(of: $transcriptionText.wrappedValue, initial: false) { oldValue, newValue in
-      var text = newValue
-      if text.last == "\n" {
-        text.removeLast()
+    if needsVirtualKeyboard && !isExpired {
+      SuppressedKeyboardTextField(
+        text: $transcriptionText,
+        shouldBecomeFirstResponder: focusStep == .step(offset + 1)
+      )
+      .frame(height: 1)
+      .opacity(0)
+      .onChange(of: $transcriptionText.wrappedValue, initial: false) { oldValue, newValue in
+        updateTranscriptionString(newValue)
       }
-      updateTranscriptionString(text)
+    } else {
+      TextField(
+        "",
+        text: $transcriptionText,
+        axis: .vertical
+      )
+      .autocorrectionDisabled()
+      .textInputAutocapitalization(.never)
+      .foregroundStyle(Color.clear)
+      .focused($focusStep, equals: .step(offset + 1))
+      .onChange(of: $transcriptionText.wrappedValue, initial: false) { oldValue, newValue in
+        var text = newValue
+        if text.last == "\n" {
+          text.removeLast()
+        }
+        updateTranscriptionString(text)
+      }
     }
   }
   
@@ -187,10 +209,18 @@ struct TranscriptionNormalModeView: View {
       .foregroundStyle(Color.secondary)
   }
   
+  private var referenceText: String {
+    needsVirtualKeyboard ? originalText : rawText
+  }
+
   private func updateTranscriptionString(_ string: String) {
     transcriptionText = String(string.prefix(originalText.count))
-    transcriptionText = checkTranscriptionNewLine(text: transcriptionText).normalizeQuotes()
-    
+    if needsVirtualKeyboard {
+      transcriptionText = transcriptionText.normalizeQuotes()
+    } else {
+      transcriptionText = checkTranscriptionNewLine(text: transcriptionText).normalizeQuotes()
+    }
+
     generateKeyboardFeedback()
     checkTranscriptionCompletion()
   }
@@ -272,7 +302,7 @@ struct TranscriptionNormalModeView: View {
   private func checkTranscriptionDifference() -> Bool {
     guard transcriptionText.count > 1 else { return false }
     let cursor = transcriptionText.count - 1
-    let originalChars = Array(rawText.prefix(cursor))
+    let originalChars = Array(referenceText.prefix(cursor))
     let currentChars = Array(transcriptionText.normalizeQuotes().prefix(cursor))
     
     if originalChars.count != currentChars.count {
@@ -303,8 +333,8 @@ struct TranscriptionNormalModeView: View {
     transcriptionCompletionTask = Task {
       guard !Task.isCancelled else { return }
       
-      let normalizedTranscription = transcriptionText//.normalizeWhitespace()
-      let normalizedOriginal = rawText
+      let normalizedTranscription = transcriptionText
+      let normalizedOriginal = referenceText
       
       // 길이가 같아야 완료
       guard normalizedTranscription.count == normalizedOriginal.count else {

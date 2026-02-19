@@ -6,22 +6,61 @@ struct Languages {
     let languageCode: String
     let title: String
   }
-  
+
+  private static let virtualKeyboardLanguages: Set<String> = ["ko"]
+
   func nativeLanguages() -> [Language] {
-    return Locale.preferredLanguages
+    var languages = Locale.preferredLanguages
       .map {
         let languageCode = Locale(identifier: $0).language.languageCode?.identifier ?? $0
-        return .init(
+        return Language(
           languageCode: languageCode,
           title: Locale(identifier: $0).localizedString(forLanguageCode: $0) ?? languageCode.capitalized
         )
       }
       .uniqued(on: \.languageCode)
+
+    let existingCodes = Set(languages.map(\.languageCode))
+    let currentLocale = Locale.current
+    for code in Self.virtualKeyboardLanguages where !existingCodes.contains(code) {
+      languages.append(.init(
+        languageCode: code,
+        title: currentLocale.localizedString(forLanguageCode: code) ?? code.capitalized
+      ))
+    }
+
+    return languages
   }
-  
+
   @MainActor
   func targetLanguages() -> [Language] {
-    keyboardLanguages()
+    var languages = keyboardLanguages()
+
+    let existingCodes = Set(languages.map(\.languageCode))
+    let currentLocale = Locale.current
+    for code in Self.virtualKeyboardLanguages where !existingCodes.contains(code) {
+      languages.append(.init(
+        languageCode: code,
+        title: currentLocale.localizedString(forLanguageCode: code) ?? code.capitalized
+      ))
+    }
+
+    return languages
+  }
+
+  @MainActor
+  static func needsVirtualKeyboard(for languageCode: String) -> Bool {
+    guard virtualKeyboardLanguages.contains(languageCode) else { return false }
+    #if DEBUG
+    return true
+    #else
+    let hasSystemKeyboard = UITextInputMode.activeInputModes.contains { mode in
+      guard let primary = mode.primaryLanguage else { return false }
+      let code = Locale(identifier: primary).language.languageCode?.identifier ?? primary
+      return code == languageCode
+    }
+    return !hasSystemKeyboard
+    #endif
   }
   
   private func commonLangues() -> [Language] {
