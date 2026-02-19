@@ -7,7 +7,7 @@ struct Languages {
     let title: String
   }
 
-  private static let virtualKeyboardLanguages: Set<String> = ["ko"]
+  private static let virtualKeyboardLanguages: Set<String> = ["ko", "ja", "zh"]
 
   func nativeLanguages() -> [Language] {
     var languages = Locale.preferredLanguages

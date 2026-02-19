@@ -968,7 +968,8 @@ extension ContentView {
               offset: offset,
               focusStep: $focusStep,
               isExpired: expired,
-              needsVirtualKeyboard: needsVirtualKeyboard
+              needsVirtualKeyboard: needsVirtualKeyboard,
+              targetLanguage: data.targetLanguage
             ) {
               if offset == finishedIndex {
                 self.phase = .finished

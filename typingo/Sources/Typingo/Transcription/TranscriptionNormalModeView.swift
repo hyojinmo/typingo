@@ -20,6 +20,7 @@ struct TranscriptionNormalModeView: View {
   @FocusState.Binding var focusStep: ContentView.Phase?
   let isExpired: Bool
   let needsVirtualKeyboard: Bool
+  let targetLanguage: String
   let onCompleted: () -> Void
   
   @State private var transcriptionText = ""
@@ -63,6 +64,7 @@ struct TranscriptionNormalModeView: View {
       if needsVirtualKeyboard && !isExpired {
         SyllableKeyboardView(
           text: originalText,
+          languageCode: targetLanguage,
           transcriptionText: $transcriptionText
         )
       }
