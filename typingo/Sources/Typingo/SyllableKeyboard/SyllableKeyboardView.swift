@@ -10,7 +10,7 @@ struct SyllableKeyboardView: View {
   @State private var shakeCharacter: Character?
   @State private var wrongTapTrigger: Bool = false
 
-  private let minimumButtonCount = 8
+  private let maximumButtonCount = 8
 
   private static let koreanSyllables: [Character] = [
     "가", "나", "다", "라", "마", "바", "사", "아", "자", "차", "카", "타", "파", "하",
@@ -136,11 +136,12 @@ struct SyllableKeyboardView: View {
   }
 
   private func regenerateButtons() {
-    let remaining = remainingTargetCharacters()
-    let unique = Array(Set(remaining))
-    let decoyCount = max(0, minimumButtonCount - unique.count)
-    let decoys = generateDecoys(count: decoyCount, excluding: Set(targetCharacters))
-    var all = unique + decoys
+    let current = nextTargetCharacter()
+    let decoyCount = maximumButtonCount - (current != nil ? 1 : 0)
+    let excluding = Set(targetCharacters).union(current.map { Set([$0]) } ?? [])
+    let decoys = generateDecoys(count: decoyCount, excluding: excluding)
+    var all = decoys
+    if let current { all.append(current) }
     all.shuffle()
     displayedButtons = all
   }

@@ -67,6 +67,9 @@ struct TranscriptionNormalModeView: View {
           languageCode: targetLanguage,
           transcriptionText: $transcriptionText
         )
+        .onChange(of: transcriptionText) { _, newValue in
+          updateTranscriptionString(newValue)
+        }
       }
     }
   }
@@ -74,6 +77,15 @@ struct TranscriptionNormalModeView: View {
   @ViewBuilder
   private func transcriptionContentView() -> some View {
     ZStack(alignment: .leading) {
+      Color.clear.frame(maxWidth: .infinity, maxHeight: 0)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
+          guard width > 0 else { return }
+          textSize = CGSize(width: width, height: textSize.height)
+          let text = rawText
+          lines = linesFrom(text: text, font: appearance.font, width: width)
+          originalText = lines.map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }).joined(separator: "\n")
+          numberOfLines = numberOfLines(in: originalText, font: appearance.font, width: width)
+        }
       transcriptionPlaceholderView()
       transcriptionPreviewView()
       transcriptionTextView()
@@ -81,16 +93,6 @@ struct TranscriptionNormalModeView: View {
     .font(.init(appearance.font))
     .lineSpacing(12)
     .lineLimit(numberOfLines, reservesSpace: true)
-    .onGeometryChange(for: CGSize.self) { geometry in
-      geometry.size
-    } action: { newValue in
-      textSize = newValue
-      
-      let text = rawText
-      lines = linesFrom(text: text, font: appearance.font, width: newValue.width)
-      originalText = lines.map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }).joined(separator: "\n")
-      numberOfLines = numberOfLines(in: originalText, font: appearance.font, width: newValue.width)
-    }
   }
   
   @ViewBuilder
@@ -174,17 +176,7 @@ struct TranscriptionNormalModeView: View {
   
   @ViewBuilder
   private func transcriptionTextView() -> some View {
-    if needsVirtualKeyboard && !isExpired {
-      SuppressedKeyboardTextField(
-        text: $transcriptionText,
-        shouldBecomeFirstResponder: focusStep == .step(offset + 1)
-      )
-      .frame(height: 1)
-      .opacity(0)
-      .onChange(of: $transcriptionText.wrappedValue, initial: false) { oldValue, newValue in
-        updateTranscriptionString(newValue)
-      }
-    } else {
+    if !needsVirtualKeyboard || isExpired {
       TextField(
         "",
         text: $transcriptionText,

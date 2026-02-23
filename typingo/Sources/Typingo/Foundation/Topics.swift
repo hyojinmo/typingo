@@ -133,16 +133,57 @@ struct Topics {
     }
   }
   
+  enum Music: String, CaseIterable {
+    case kpop
+    case jpop
+    case cpop
+    case pop
+
+    var title: String {
+      switch self {
+      case .kpop:
+        "K-pop 🇰🇷"
+      case .jpop:
+        "J-pop 🇯🇵"
+      case .cpop:
+        "C-pop 🇨🇳"
+      case .pop:
+        "Pop 🌍"
+      }
+    }
+
+    var artists: [String] {
+      switch self {
+      case .kpop:
+        ["BTS", "BLACKPINK", "NewJeans", "aespa", "Stray Kids",
+         "TWICE", "IVE", "(G)I-DLE", "LE SSERAFIM", "SEVENTEEN",
+         "EXO", "Red Velvet", "TXT", "ENHYPEN", "ITZY"]
+      case .jpop:
+        ["YOASOBI", "Ado", "Kenshi Yonezu", "LiSA",
+         "Official HIGE DANdism", "Fujii Kaze", "imase", "Vaundy"]
+      case .cpop:
+        ["Jay Chou", "Eason Chan", "G.E.M.", "Jolin Tsai",
+         "JJ Lin", "Stefanie Sun", "Hebe Tien", "Lay Zhang"]
+      case .pop:
+        ["Taylor Swift", "Ed Sheeran", "The Weeknd", "Billie Eilish",
+         "Harry Styles", "Dua Lipa", "Olivia Rodrigo", "Bruno Mars"]
+      }
+    }
+  }
+
   enum Category: String, CaseIterable {
+    case music
     case dailyLife
     case travel
     case schoolAndWork
     case aboutMeAndPeople
     case feelingsAndReactions
     case funAndInterests
-    
+
     var title: String {
       switch self {
+      case .music:
+        "🎵 Music & Lyrics"
       case .dailyLife:
         "🌱 Daily Life"
       case .travel:

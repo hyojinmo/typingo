@@ -219,68 +219,72 @@ struct ContentView: View {
           }
           
           if phase == .finished {
-            DividerLabel(
-              text: "🔑"
-            )
-            
-            keyExpressionView(data: data)
+            if !data.keyExpressions.isEmpty {
+              DividerLabel(
+                text: "🔑"
+              )
+
+              keyExpressionView(data: data)
+                .transition(
+                  .asymmetric(
+                    insertion: .init(
+                      .blurReplace.animation(.snappy.delay(1))
+                    ),
+                    removal: .init(
+                      .blurReplace
+                    )
+                  )
+                )
+            }
+
+            if !data.motivation.target.isEmpty {
+              DividerLabel(
+                text: data.motivation.speaker
+              )
               .transition(
                 .asymmetric(
                   insertion: .init(
-                    .blurReplace.animation(.snappy.delay(1))
+                    .blurReplace.animation(.snappy.delay(3))
                   ),
                   removal: .init(
                     .blurReplace
                   )
                 )
               )
-            
-            DividerLabel(
-              text: data.motivation.speaker
-            )
-            .transition(
-              .asymmetric(
-                insertion: .init(
-                  .blurReplace.animation(.snappy.delay(3))
-                ),
-                removal: .init(
-                  .blurReplace
-                )
-              )
-            )
-            
-            motivationView(data: data)
-              .transition(
-                .asymmetric(
-                  insertion: .init(
-                    .blurReplace.animation(.snappy.delay(4))
-                  ),
-                  removal: .init(
-                    .blurReplace
+
+              motivationView(data: data)
+                .transition(
+                  .asymmetric(
+                    insertion: .init(
+                      .blurReplace.animation(.snappy.delay(4))
+                    ),
+                    removal: .init(
+                      .blurReplace
+                    )
                   )
                 )
-              )
-            
+            }
+
             DividerLabel(
               text: "🔥"
             )
             .transition(
               .asymmetric(
                 insertion: .init(
-                  .blurReplace.animation(.snappy.delay(6))
+                  .blurReplace.animation(.snappy.delay(data.keyExpressions.isEmpty && data.motivation.target.isEmpty ? 1 : 6))
                 ),
                 removal: .init(
                   .blurReplace
                 )
               )
             )
-            
+
             nextTopicView(data: data)
               .id(Phase.finished)
               .transition(
                 .asymmetric(
                   insertion: .init(
-                    .blurReplace.animation(.snappy.delay(7))
+                    .blurReplace.animation(.snappy.delay(data.keyExpressions.isEmpty && data.motivation.target.isEmpty ? 2 : 7))
                   ),
                   removal: .init(
                     .blurReplace
@@ -577,6 +581,25 @@ extension ContentView {
     Menu {
       ForEach(Topics.Category.allCases, id: \.self) { category in
         switch category {
+        case .music:
+          Menu {
+            ForEach(Topics.Music.allCases, id: \.self) { genre in
+              Menu(genre.title) {
+                Picker(
+                  selection: $category
+                ) {
+                  ForEach(genre.artists, id: \.self) { artist in
+                    Text(artist)
+                      .tag("lyrics:\(artist)")
+                  }
+                } label: {
+                  Text(genre.title)
+                }
+              }
+            }
+          } label: {
+            Text(Topics.Category.music.title)
+          }
         case .dailyLife:
           Menu {
             Picker(
@@ -664,7 +687,7 @@ extension ContentView {
         }
       }
     } label: {
-      Text(category)
+      Text(displayCategory)
     }
   }
   
@@ -839,7 +862,7 @@ extension ContentView {
         .progressViewStyle(.circular)
         .controlSize(.mini)
       
-      Text(category)
+      Text(displayCategory)
         .multilineTextAlignment(.center)
     }
     .font(.title3)
@@ -855,6 +878,13 @@ extension ContentView {
     .transition(
       .blurReplace.combined(with: .scale)
     )
+  }
+
+  private var displayCategory: String {
+    if category.hasPrefix("lyrics:") {
+      return String(category.dropFirst("lyrics:".count))
+    }
+    return category
   }
   
   @ViewBuilder
@@ -926,10 +956,12 @@ extension ContentView {
                 .stroke(Color(.separator))
             }
           
-          Text(script.native)
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-          
+          if !script.native.isEmpty {
+            Text(script.native)
+              .font(.footnote)
+              .foregroundStyle(.secondary)
+          }
+
           let expired = offset < lastIndex || (phase >= .finished && lastIndex == finishedIndex)
           
           HStack(alignment: .top) {
@@ -1011,7 +1043,11 @@ extension ContentView {
             category = topic
             restartTypingo()
           } label: {
-            Text(topic)
+            if topic.hasPrefix("lyrics:") {
+              Text("🎵 " + topic.dropFirst("lyrics:".count))
+            } else {
+              Text(topic)
+            }
           }
         }
       }

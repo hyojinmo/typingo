@@ -38,14 +38,23 @@ final class TypingoViewModel {
 //        
 //      ]
 //    )
-    let data = try await TypingoService().fetchScript(
-      category: category,
-      level: level,
-      nativeLanguage: nativeLanguage,
-      targetLanguage: targetLanguage,
-      model: model
-    )
-    print(#function, model)
+    let data: TypingoService.Response
+    if category.hasPrefix("lyrics:") {
+      let query = String(category.dropFirst("lyrics:".count))
+      data = try await LyricsService().fetchContent(
+        query: query,
+        nativeLanguage: nativeLanguage,
+        targetLanguage: targetLanguage
+      )
+    } else {
+      data = try await TypingoService().fetchScript(
+        category: category,
+        level: level,
+        nativeLanguage: nativeLanguage,
+        targetLanguage: targetLanguage,
+        model: model
+      )
+    }
     print(#function, data)
     self.data = data
   }
